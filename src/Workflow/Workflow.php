@@ -36,6 +36,7 @@ use Stagehand\FSM\State\State;
 use Stagehand\FSM\State\StateInterface;
 use Stagehand\FSM\StateMachine\StateMachine;
 use Stagehand\FSM\StateMachine\StateMachineInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
 class Workflow implements EntityInterface, IdentifiableInterface, \Serializable
@@ -91,6 +92,13 @@ class Workflow implements EntityInterface, IdentifiableInterface, \Serializable
      * @since Property available since Release 1.1.0
      */
     private $expressionLanguage;
+
+    /**
+     * @var EventDispatcherInterface
+     *
+     * @since Property available since Release 1.2.0
+     */
+    private $eventDispatcher;
 
     /**
      * @param int|string $id
@@ -422,6 +430,16 @@ class Workflow implements EntityInterface, IdentifiableInterface, \Serializable
         }
 
         return $activityLogCollection;
+    }
+
+    /**
+     * @param EventDispatcherInterface $eventDispatcher
+     *
+     * @since Method available since Release 1.2.0
+     */
+    public function setEventDispatcher(EventDispatcherInterface $eventDispatcher)
+    {
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
