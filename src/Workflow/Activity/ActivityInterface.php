@@ -48,4 +48,11 @@ interface ActivityInterface extends FlowObjectInterface, TransitionalInterface, 
      * @throws \OutOfBoundsException
      */
     public function getWorkItem($index);
+
+    /**
+     * @return \DateInterval
+     *
+     * @since Method available since Release 1.4.0
+     */
+    public function getElapsedTime();
 }
