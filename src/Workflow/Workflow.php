@@ -97,11 +97,11 @@ class Workflow implements \Serializable
     private $operationRunner;
 
     /**
-     * @var Token
+     * @var Token[]
      *
      * @since Property available since Release 2.0.0
      */
-    private $token;
+    private $tokens = [];
 
     /**
      * @var ActivityLogCollection
@@ -137,7 +137,7 @@ class Workflow implements \Serializable
             'roleCollection' => $this->roleCollection,
             'startEvent' => $this->startEvent,
             'endEvent' => $this->endEvent,
-            'token' => $this->token,
+            'tokens' => $this->tokens,
             'activityLogCollection' => $this->activityLogCollection,
         ]);
     }
@@ -265,25 +265,53 @@ class Workflow implements \Serializable
     /**
      * @return FlowObjectInterface|null
      */
-    public function getCurrentFlowObject()
+    public function getCurrentFlowObject(): ?FlowObjectInterface
     {
-        if ($this->token === null) {
+        $flowObjects = $this->getCurrentFlowObjects();
+        if (count($flowObjects) == 0) {
             return null;
         }
 
-        return $this->token->getCurrentFlowObject();
+        return $flowObjects[0];
+    }
+
+    /**
+     * @return FlowObjectInterface[]
+     *
+     * @since Method available since Release 2.0.0
+     */
+    public function getCurrentFlowObjects(): iterable
+    {
+        return array_map(function (Token $token) {
+            return $token->getCurrentFlowObject();
+        }, $this->tokens
+        );
     }
 
     /**
      * @return FlowObjectInterface|null
      */
-    public function getPreviousFlowObject()
+    public function getPreviousFlowObject(): ?FlowObjectInterface
     {
-        if ($this->token === null) {
+        $flowObjects = $this->getPreviousFlowObjects();
+        if (count($flowObjects) == 0) {
             return null;
         }
 
-        return $this->token->getPreviousFlowObject();
+        return $flowObjects[0];
+    }
+
+    /**
+     * @return FlowObjectInterface[]
+     *
+     * @since Method available since Release 2.0.0
+     */
+    public function getPreviousFlowObjects(): iterable
+    {
+        return array_map(function (Token $token) {
+            return $token->getPreviousFlowObject();
+        }, $this->tokens
+        );
     }
 
     /**
@@ -292,7 +320,7 @@ class Workflow implements \Serializable
     public function start(StartEvent $event)
     {
         $this->startEvent = $event;
-        $this->token = $this->generateToken($this->startEvent);
+        $this->tokens[] = $this->generateToken($this->startEvent);
         $this->selectSequenceFlow($this->startEvent);
         $this->next();
     }

@@ -453,4 +453,22 @@ class WorkflowTest extends TestCase
 
         $this->assertThat($workflow->isEnded(), $this->isTrue());
     }
+
+    /**
+     * @test
+     *
+     * @since Method available since Release 2.0.0
+     */
+    public function parallelGateway()
+    {
+        $participant = $this->createMock(ParticipantInterface::class);
+        $participant->method('hasRole')->willReturn(true);
+
+        $workflow = $this->workflowRepository->findById('ParallelGatewayProcess');
+        $workflow->start($workflow->getFlowObject('Start'));
+
+        $currentFlowObjects = $workflow->getCurrentFlowObjects();
+
+        $this->assertThat(count($currentFlowObjects), $this->equalTo(2));
+    }
 }
