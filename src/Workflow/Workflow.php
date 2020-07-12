@@ -24,7 +24,9 @@ use PHPMentors\Workflower\Workflow\Element\Token;
 use PHPMentors\Workflower\Workflow\Element\TransitionalInterface;
 use PHPMentors\Workflower\Workflow\Event\EndEvent;
 use PHPMentors\Workflower\Workflow\Event\StartEvent;
+use PHPMentors\Workflower\Workflow\Gateway\ExclusiveGateway;
 use PHPMentors\Workflower\Workflow\Gateway\GatewayInterface;
+use PHPMentors\Workflower\Workflow\Gateway\ParallelGateway;
 use PHPMentors\Workflower\Workflow\Operation\OperationalInterface;
 use PHPMentors\Workflower\Workflow\Operation\OperationRunnerInterface;
 use PHPMentors\Workflower\Workflow\Participant\ParticipantInterface;
@@ -476,9 +478,24 @@ class Workflow implements \Serializable
 
         $currentFlowObject->getToken()->flow($selectedSequenceFlow->getDestination());
 
-        if ($this->getCurrentFlowObject() instanceof GatewayInterface && $this->getCurrentFlowObject() instanceof ConditionalInterface) {
-            $gateway = $this->getCurrentFlowObject();
-            $this->selectSequenceFlow(/* @var $gateway GatewayInterface */$gateway);
+        if ($this->getCurrentFlowObject() instanceof ExclusiveGateway) {
+            $this->selectSequenceFlow($this->getCurrentFlowObject());
+        } elseif ($this->getCurrentFlowObject() instanceof ParallelGateway) {
+            $parallelGateway = $this->getCurrentFlowObject();
+            $incomings = $this->connectingObjectCollection->filterByDestination($parallelGateway);
+            $incomingTokens = $parallelGateway->getToken();
+            if (count($incomingTokens) == count($incomings)) {
+                foreach ($incomingTokens as $incomingToken) {
+                    $parallelGateway->detachToken($incomingToken);
+                    unset($this->tokens[$incomingToken->getId()]);
+                }
+
+                foreach ($this->connectingObjectCollection->filterBySource($parallelGateway) as $outgoing) {  /* @var $outgoing ConnectingObjectInterface */
+                    $outgoingToken = $this->generateToken();
+                    $this->tokens[$outgoingToken->getId()] = $outgoingToken;
+                    $outgoingToken->flow($outgoing->getDestination());
+                }
+            }
         }
     }
 

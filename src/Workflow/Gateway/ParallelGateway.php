@@ -125,7 +125,7 @@ class ParallelGateway implements GatewayInterface, \Serializable
      */
     public function attachToken(Token $token): void
     {
-        $this->token = $token;
+        $this->token[$token->getId()] = $token;
     }
 
     /**
@@ -133,8 +133,8 @@ class ParallelGateway implements GatewayInterface, \Serializable
      */
     public function detachToken(Token $token): void
     {
-        assert($this->token->getId() == $token->getId());
+        assert(array_key_exists($token->getId(), $this->token));
 
-        $this->token = null;
+        unset($this->token[$token->getId()]);
     }
 }
