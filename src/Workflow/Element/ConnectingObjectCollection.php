@@ -104,4 +104,21 @@ class ConnectingObjectCollection implements \Countable, \IteratorAggregate, \Ser
     {
         return $this->connectingObjects;
     }
+
+    /**
+     * @param TransitionalInterface $flowObject
+     * 
+     * @return ConnectingObjectCollection
+     */
+    public function filterByDestination(TransitionalInterface $flowObject) {
+        $collection = new static();
+
+        foreach ($this as $connectingObject) { /* @var $connectingObject ConnectingObjectInterface */
+            if ($connectingObject->getDestination()->getId() === $flowObject->getId()) {
+                $collection->add($connectingObject);
+            }
+        }
+
+        return $collection;
+    }
 }

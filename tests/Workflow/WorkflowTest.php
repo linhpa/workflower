@@ -61,6 +61,10 @@ class WorkflowTest extends TestCase
 
         $currentFlowObject = $workflow->getCurrentFlowObject(); /* @var $currentFlowObject ActivityInterface */
 
+        $participant = $this->createMock(ParticipantInterface::class);
+        $participant->method('hasRole')->willReturn(true);
+        $workflow->createWorkItem($currentFlowObject, $participant);
+        
         $this->assertThat($currentFlowObject, $this->isInstanceOf('PHPMentors\Workflower\Workflow\Activity\ActivityInterface'));
         $this->assertThat($currentFlowObject->getId(), $this->equalTo('RecordLoanApplicationInformation'));
         $this->assertThat($currentFlowObject->getCurrentState(), $this->equalTo(WorkItemInterface::STATE_CREATED));
@@ -81,6 +85,7 @@ class WorkflowTest extends TestCase
 
         $workflow = $this->workflowRepository->findById('LoanRequestProcess');
         $workflow->start($workflow->getFlowObject('Start'));
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
 
         $currentFlowObject = $workflow->getCurrentFlowObject();
@@ -101,6 +106,7 @@ class WorkflowTest extends TestCase
 
         $workflow = $this->workflowRepository->findById('LoanRequestProcess');
         $workflow->start($workflow->getFlowObject('Start'));
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
 
@@ -124,11 +130,13 @@ class WorkflowTest extends TestCase
 
         $workflow = $this->workflowRepository->findById('LoanRequestProcess');
         $workflow->start($workflow->getFlowObject('Start'));
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
 
         $currentFlowObject = $workflow->getCurrentFlowObject();
+        $workflow->createWorkItem($currentFlowObject, $participant);
 
         $this->assertThat($currentFlowObject, $this->isInstanceOf('PHPMentors\Workflower\Workflow\Activity\ActivityInterface'));
         $this->assertThat($currentFlowObject->getId(), $this->equalTo('CheckApplicantInformation'));
@@ -171,10 +179,12 @@ class WorkflowTest extends TestCase
         $workflow->setProcessData(['rejected' => false]);
         $workflow->start($workflow->getFlowObject('Start'));
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->setProcessData(['rejected' => $rejected]);
@@ -212,14 +222,17 @@ class WorkflowTest extends TestCase
         $workflow->setProcessData(['rejected' => false]);
         $workflow->start($workflow->getFlowObject('Start'));
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->setProcessData(['rejected' => $rejected]);
@@ -242,18 +255,22 @@ class WorkflowTest extends TestCase
         $workflow->setProcessData(['rejected' => false]);
         $workflow->start($workflow->getFlowObject('Start'));
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
@@ -286,18 +303,22 @@ class WorkflowTest extends TestCase
         $workflow->setProcessData(['rejected' => false]);
         $workflow->start($workflow->getFlowObject('Start'));
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
@@ -339,18 +360,22 @@ class WorkflowTest extends TestCase
         $workflow->setProcessData(['satisfied' => false]);
         $workflow->start($workflow->getFlowObject('Start'));
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
 
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->setProcessData(['satisfied' => true]);
@@ -412,10 +437,11 @@ class WorkflowTest extends TestCase
         $participant = $this->getMockBuilder(ParticipantInterface::class)
             ->setMethods(['hasRole', 'setResource', 'getResource', 'getName', 'getId'])
             ->getMock();
-        $participant->expects($this->exactly(3))->method('hasRole')->with($this->equalTo(Workflow::DEFAULT_ROLE_ID))->willReturn(true);
+        $participant->expects($this->exactly(4))->method('hasRole')->with($this->equalTo(Workflow::DEFAULT_ROLE_ID))->willReturn(true);
 
         $workflow = $this->workflowRepository->findById('NoLanesProcess');
         $workflow->start($workflow->getFlowObject('Start'));
+        $workflow->createWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->allocateWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->startWorkItem($workflow->getCurrentFlowObject(), $participant);
         $workflow->completeWorkItem($workflow->getCurrentFlowObject(), $participant);
@@ -470,5 +496,26 @@ class WorkflowTest extends TestCase
         $currentFlowObjects = $workflow->getCurrentFlowObjects();
 
         $this->assertThat(count($currentFlowObjects), $this->equalTo(2));
+
+        $currentFlowObject = $currentFlowObjects[0];
+        $workflow->createWorkItem($currentFlowObject, $participant);
+        $workflow->allocateWorkItem($currentFlowObject, $participant);
+        $workflow->startWorkItem($currentFlowObject, $participant);
+        $workflow->completeWorkItem($currentFlowObject, $participant);
+
+        $currentFlowObjects = $workflow->getCurrentFlowObjects();
+
+        $this->assertThat(count($currentFlowObjects), $this->equalTo(2));
+
+        //$currentFlowObjects[0] is join parallel gateway
+        $currentFlowObject = $currentFlowObjects[1];
+        $workflow->createWorkItem($currentFlowObject, $participant);
+        $workflow->allocateWorkItem($currentFlowObject, $participant);
+        $workflow->startWorkItem($currentFlowObject, $participant);
+        $workflow->completeWorkItem($currentFlowObject, $participant);
+
+        $currentFlowObjects = $workflow->getCurrentFlowObjects();
+
+        $this->assertThat(count($currentFlowObjects), $this->equalTo(1));
     }
 }

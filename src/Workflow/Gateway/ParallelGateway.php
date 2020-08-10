@@ -33,7 +33,7 @@ class ParallelGateway implements GatewayInterface, \Serializable
     private $role;
 
     /**
-     * @var Token
+     * @var array
      */
     private $token;
 
@@ -115,7 +115,7 @@ class ParallelGateway implements GatewayInterface, \Serializable
     /**
      * {@inheritdoc}
      */
-    public function getToken(): Token
+    public function getToken(): iterable
     {
         return $this->token;
     }

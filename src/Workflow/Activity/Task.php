@@ -244,7 +244,7 @@ class Task implements ActivityInterface, \Serializable
      */
     public function createWorkItem()
     {
-        if (!(count($this->workItems) == 0 || $this->isEnded())) {
+        if (!$this->isCreatable()) {
             throw new UnexpectedActivityStateException(sprintf('The current work item of the activity "%s" is not ended.', $this->getId()));
         }
 
@@ -285,6 +285,14 @@ class Task implements ActivityInterface, \Serializable
         }
 
         $this->workItems[count($this->workItems) - 1]->complete($participant);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function isCreatable()
+    {
+        return count($this->workItems) == 0 || $this->isEnded();
     }
 
     /**

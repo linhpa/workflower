@@ -87,6 +87,20 @@ class Process
     /**
      * @param WorkItemContextInterface $workItemContext
      */
+    public function createWorkItem(WorkItemContextInterface $workItemContext)
+    {
+        assert($workItemContext->getProcessContext() !== null);
+        assert($workItemContext->getProcessContext()->getWorkflow() !== null);
+        assert($workItemContext->getActivityId() !== null);
+
+        $workflow = $this->configureWorkflow($workItemContext->getProcessContext()->getWorkflow());
+        $flowObject = $workflow->getFlowObject($workItemContext->getActivityId());
+        $workflow->createWorkItem(/* @var $flowObject ActivityInterface */$flowObject, $workItemContext->getParticipant());
+    }
+
+    /**
+     * @param WorkItemContextInterface $workItemContext
+     */
     public function allocateWorkItem(WorkItemContextInterface $workItemContext)
     {
         assert($workItemContext->getProcessContext() !== null);
@@ -140,6 +154,16 @@ class Process
         assert($workItemContext->getProcessContext()->getWorkflow()->getFlowObject($workItemContext->getActivityId()) instanceof ActivityInterface);
 
         $activity = $workItemContext->getProcessContext()->getWorkflow()->getFlowObject($workItemContext->getActivityId()); /* @var $activity ActivityInterface */
+
+        if ($activity->isCreatable()) {
+            $this->createWorkItem($workItemContext);
+            $nextWorkItemContext = new WorkItemContext($workItemContext->getParticipant());
+            $nextWorkItemContext->setActivityId($workItemContext->getProcessContext()->getWorkflow()->getCurrentFlowObject()->getId());
+            $nextWorkItemContext->setProcessContext($workItemContext->getProcessContext());
+
+            return $this->executeWorkItem($nextWorkItemContext);
+        }
+
         if ($activity->isAllocatable()) {
             $this->allocateWorkItem($workItemContext);
             $nextWorkItemContext = new WorkItemContext($workItemContext->getParticipant());

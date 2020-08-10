@@ -284,10 +284,10 @@ class Workflow implements \Serializable
      */
     public function getCurrentFlowObjects(): iterable
     {
-        return array_map(function (Token $token) {
+        return array_values(array_map(function (Token $token) {
             return $token->getCurrentFlowObject();
         }, $this->tokens
-        );
+        ));
     }
 
     /**
@@ -310,10 +310,10 @@ class Workflow implements \Serializable
      */
     public function getPreviousFlowObjects(): iterable
     {
-        return array_map(function (Token $token) {
+        return array_values(array_map(function (Token $token) {
             return $token->getPreviousFlowObject();
         }, $this->tokens
-        );
+        ));
     }
 
     /**
@@ -322,9 +322,23 @@ class Workflow implements \Serializable
     public function start(StartEvent $event)
     {
         $this->startEvent = $event;
-        $this->tokens[] = $this->generateToken($this->startEvent);
+        $token = $this->generateToken($this->startEvent); /** @var $token Token */
+        $this->tokens[$token->getId()] = $token;
         $this->selectSequenceFlow($this->startEvent);
         $this->next();
+    }
+
+    /**
+     * @param ActivityInterface    $activity
+     * @param ParticipantInterface $participant
+     */
+    public function createWorkItem(ActivityInterface $activity, ParticipantInterface $participant)
+    {
+        $this->assertParticipantHasRole($activity, $participant);
+        $this->assertCurrentFlowObjectIsExpectedActivity($activity);
+
+        $activity->createWorkItem($participant);
+        $this->activityLogCollection->add(new ActivityLog($activity));
     }
 
     /**
@@ -485,13 +499,13 @@ class Workflow implements \Serializable
             $incomings = $this->connectingObjectCollection->filterByDestination($parallelGateway);
             $incomingTokens = $parallelGateway->getToken();
             if (count($incomingTokens) == count($incomings)) {
-                foreach ($incomingTokens as $incomingToken) {
+                foreach ($incomingTokens as $incomingToken) {                    
                     $parallelGateway->detachToken($incomingToken);
-                    unset($this->tokens[$incomingToken->getId()]);
+                    unset($this->tokens[$incomingToken->getId()]);                    
                 }
 
-                foreach ($this->connectingObjectCollection->filterBySource($parallelGateway) as $outgoing) {  /* @var $outgoing ConnectingObjectInterface */
-                    $outgoingToken = $this->generateToken();
+                foreach ($this->connectingObjectCollection->filterBySource($parallelGateway) as $outgoing) {  /* @var $outgoing ConnectingObjectInterface */                    
+                    $outgoingToken = $this->generateToken($outgoing->getDestination());
                     $this->tokens[$outgoingToken->getId()] = $outgoingToken;
                     $outgoingToken->flow($outgoing->getDestination());
                 }
@@ -519,6 +533,13 @@ class Workflow implements \Serializable
      */
     private function assertCurrentFlowObjectIsExpectedActivity(ActivityInterface $activity)
     {
+        $currentFlowObjects = $this->getCurrentFlowObjects();
+        foreach ($currentFlowObjects as $currentFlowObject) {
+            if ($activity->equals($currentFlowObject)) {
+                return true;
+            }
+        }
+
         if (!$activity->equals($this->getCurrentFlowObject())) {
             throw new UnexpectedActivityException(sprintf('The current flow object is not equal to the expected activity "%s".', $activity->getId()));
         }
@@ -529,17 +550,16 @@ class Workflow implements \Serializable
      */
     private function next()
     {
-        $currentFlowObject = $this->getCurrentFlowObject();
-        if ($currentFlowObject instanceof ActivityInterface) {
-            $currentFlowObject->createWorkItem();
-            $this->activityLogCollection->add(new ActivityLog($currentFlowObject));
-
-            if ($currentFlowObject instanceof OperationalInterface) {
-                $this->executeOperationalActivity($currentFlowObject);
+        $currentFlowObjects = $this->getCurrentFlowObjects();
+        foreach ($currentFlowObjects as $currentFlowObject) {
+            if ($currentFlowObject instanceof ActivityInterface) {                                
+                if ($currentFlowObject instanceof OperationalInterface) {
+                    $this->executeOperationalActivity($currentFlowObject);
+                }
+            } elseif ($currentFlowObject instanceof EndEvent) {
+                $this->end($currentFlowObject);
             }
-        } elseif ($currentFlowObject instanceof EndEvent) {
-            $this->end($currentFlowObject);
-        }
+        }        
     }
 
     /**
@@ -550,6 +570,7 @@ class Workflow implements \Serializable
     private function executeOperationalActivity(ActivityInterface $operational)
     {
         $participant = $this->operationRunner->provideParticipant(/* @var $operational OperationalInterface */ $operational, $this);
+        $this->createWorkItem($operational, $participant);
         $this->allocateWorkItem($operational, $participant);
         $this->startWorkItem($operational, $participant);
         $this->operationRunner->run(/* @var $operational OperationalInterface */ $operational, $this);
