@@ -27,6 +27,7 @@ use PHPMentors\Workflower\Workflow\Event\StartEvent;
 use PHPMentors\Workflower\Workflow\Gateway\ExclusiveGateway;
 use PHPMentors\Workflower\Workflow\Gateway\GatewayInterface;
 use PHPMentors\Workflower\Workflow\Gateway\ParallelGateway;
+use PHPMentors\Workflower\Workflow\Gateway\InclusiveGateway;
 use PHPMentors\Workflower\Workflow\Operation\OperationalInterface;
 use PHPMentors\Workflower\Workflow\Operation\OperationRunnerInterface;
 use PHPMentors\Workflower\Workflow\Participant\ParticipantInterface;
@@ -324,7 +325,7 @@ class Workflow implements \Serializable
         $this->startEvent = $event;
         $token = $this->generateToken($this->startEvent); /** @var $token Token */
         $this->tokens[$token->getId()] = $token;
-        $this->selectSequenceFlow($this->startEvent);
+        $this->selectSequenceFlows($this->startEvent);
         $this->next();
     }
 
@@ -375,7 +376,7 @@ class Workflow implements \Serializable
         $this->assertCurrentFlowObjectIsExpectedActivity($activity);
 
         $activity->complete($participant);
-        $this->selectSequenceFlow($activity);
+        $this->selectSequenceFlows($activity);
         $this->next();
     }
 
@@ -462,39 +463,79 @@ class Workflow implements \Serializable
      *
      * @throws SequenceFlowNotSelectedException
      */
-    private function selectSequenceFlow(TransitionalInterface $currentFlowObject)
+    private function selectSequenceFlows(TransitionalInterface $currentFlowObject)
     {
+        $selectedSequenceFlows = [];
         foreach ($this->connectingObjectCollection->filterBySource($currentFlowObject) as $connectingObject) { /* @var $connectingObject ConnectingObjectInterface */
             if ($connectingObject instanceof SequenceFlow) {
                 if (!($currentFlowObject instanceof ConditionalInterface) || $connectingObject->getId() !== $currentFlowObject->getDefaultSequenceFlowId()) {
                     $condition = $connectingObject->getCondition();
                     if ($condition === null) {
-                        $selectedSequenceFlow = $connectingObject;
-                        break;
+                        $selectedSequenceFlows[] = $connectingObject;        
+                        if ($currentFlowObject instanceof ExclusiveGateway) {
+                            break;
+                        }                
                     } else {
                         $expressionLanguage = $this->expressionLanguage ?: new ExpressionLanguage();
                         if ($expressionLanguage->evaluate($condition, $this->processData)) {
-                            $selectedSequenceFlow = $connectingObject;
-                            break;
+                            $selectedSequenceFlows[] = $connectingObject;
+                            if ($currentFlowObject instanceof ExclusiveGateway) {
+                                break;
+                            }                            
                         }
                     }
                 }
             }
         }
 
-        if (!isset($selectedSequenceFlow)) {
+        if (empty($selectedSequenceFlows)) {
             if (!($currentFlowObject instanceof ConditionalInterface) || $currentFlowObject->getDefaultSequenceFlowId() === null) {
                 throw new SequenceFlowNotSelectedException(sprintf('No sequence flow can be selected on "%s".', $currentFlowObject->getId()));
             }
 
-            $selectedSequenceFlow = $this->connectingObjectCollection->get($currentFlowObject->getDefaultSequenceFlowId());
+            $selectedSequenceFlows[] = $this->connectingObjectCollection->get($currentFlowObject->getDefaultSequenceFlowId());
         }
 
-        $currentFlowObject->getToken()->flow($selectedSequenceFlow->getDestination());
+        if (count($selectedSequenceFlows) == 1) {
+            if ($currentFlowObject instanceof InclusiveGateway) {
+                $incomings = $this->connectingObjectCollection->filterByDestination($currentFlowObject);
+                if (count($incomings) > 1) {
+                    foreach ($incomings as $incoming) {
+                        $incomingSource = $incoming->getSource();
+                        if ($incomingSource->hasToken()) {
+                            $notComingToken = $incomingSource->getToken();
+                            $incomingSource->detachToken($notComingToken);
+                            unset($this->tokens[$notComingToken->getId()]);
+                        }
+                    }
+                }
+            }
 
-        if ($this->getCurrentFlowObject() instanceof ExclusiveGateway) {
-            $this->selectSequenceFlow($this->getCurrentFlowObject());
-        } elseif ($this->getCurrentFlowObject() instanceof ParallelGateway) {
+            $currentFlowObject->getToken()->flow($selectedSequenceFlows[0]->getDestination());
+        } else {
+            $token = $currentFlowObject->getToken();
+            $currentFlowObject->detachToken($token);
+            unset($this->tokens[$token->getId()]);
+            foreach ($selectedSequenceFlows as $selectedSequenceFlow) {
+                $outgoingToken = $this->generateToken($selectedSequenceFlow->getDestination());
+                $this->tokens[$outgoingToken->getId()] = $outgoingToken;
+                $outgoingToken->flow($selectedSequenceFlow->getDestination());
+            }
+        }
+
+        $newCurrentFlowObjects = $this->getCurrentFlowObjects();
+        if (count($newCurrentFlowObjects) > 1) {
+            foreach ($newCurrentFlowObjects as $newCurrentFlowObject) {
+                if ($newCurrentFlowObject instanceof InclusiveGateway) {
+                    $this->selectSequenceFlows($newCurrentFlowObject);
+                    break;
+                }
+            }
+        } elseif ($this->getCurrentFlowObject() instanceof ExclusiveGateway || $this->getCurrentFlowObject() instanceof InclusiveGateway) {
+            $this->selectSequenceFlows($this->getCurrentFlowObject());
+        }
+        
+        if ($this->getCurrentFlowObject() instanceof ParallelGateway) {
             $parallelGateway = $this->getCurrentFlowObject();
             $incomings = $this->connectingObjectCollection->filterByDestination($parallelGateway);
             $incomingTokens = $parallelGateway->getToken();

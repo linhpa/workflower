@@ -364,4 +364,9 @@ class Task implements ActivityInterface, \Serializable
 
         $this->token = null;
     }
+
+    public function hasToken()
+    {
+        return $this->token !== null;
+    }
 }

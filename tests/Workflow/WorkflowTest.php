@@ -518,4 +518,72 @@ class WorkflowTest extends TestCase
 
         $this->assertThat(count($currentFlowObjects), $this->equalTo(1));
     }
+
+    /**
+     * @test
+     *
+     * @since Method available since Release 2.0.0
+     */
+    public function inclusiveGateway()
+    {
+        $participant = $this->createMock(ParticipantInterface::class);
+        $participant->method('hasRole')->willReturn(true);
+
+        $workflow = $this->workflowRepository->findById('InclusiveGatewayProcess');
+        $workflow->setProcessData(['a' => false, 'b' => true]);
+        $workflow->start($workflow->getFlowObject('Start'));
+
+        $currentFlowObjects = $workflow->getCurrentFlowObjects();
+
+        $this->assertThat(count($currentFlowObjects), $this->equalTo(1));
+
+        $currentFlowObject = $currentFlowObjects[0];
+        $workflow->createWorkItem($currentFlowObject, $participant);
+        $workflow->allocateWorkItem($currentFlowObject, $participant);
+        $workflow->startWorkItem($currentFlowObject, $participant);
+        $workflow->completeWorkItem($currentFlowObject, $participant);
+
+        $currentFlowObjects = $workflow->getCurrentFlowObjects();
+
+        $this->assertThat(count($currentFlowObjects), $this->equalTo(1));
+
+        $currentFlowObject = $currentFlowObjects[0];
+        $workflow->createWorkItem($currentFlowObject, $participant);
+        $workflow->allocateWorkItem($currentFlowObject, $participant);
+        $workflow->startWorkItem($currentFlowObject, $participant);
+        $workflow->completeWorkItem($currentFlowObject, $participant);
+
+        $currentFlowObjects = $workflow->getCurrentFlowObjects();
+
+        $this->assertThat(count($currentFlowObjects), $this->equalTo(1));
+    }
+
+    /**
+     * @test
+     *
+     * @since Method available since Release 2.0.0
+     */
+    public function inclusiveGateway2()
+    {
+        $participant = $this->createMock(ParticipantInterface::class);
+        $participant->method('hasRole')->willReturn(true);
+
+        $workflow = $this->workflowRepository->findById('InclusiveGatewayProcess');
+        $workflow->setProcessData(['a' => true, 'b' => true]);
+        $workflow->start($workflow->getFlowObject('Start'));
+
+        $currentFlowObjects = $workflow->getCurrentFlowObjects();
+
+        $this->assertThat(count($currentFlowObjects), $this->equalTo(2));
+
+        $currentFlowObject = $currentFlowObjects[1];
+        $workflow->createWorkItem($currentFlowObject, $participant);
+        $workflow->allocateWorkItem($currentFlowObject, $participant);
+        $workflow->startWorkItem($currentFlowObject, $participant);
+        $workflow->completeWorkItem($currentFlowObject, $participant);
+
+        $currentFlowObjects = $workflow->getCurrentFlowObjects();        
+        
+        $this->assertThat(count($currentFlowObjects), $this->equalTo(1));
+    }
 }
